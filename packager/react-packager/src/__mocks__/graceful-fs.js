@@ -8,13 +8,4 @@
  */
 'use strict';
 
-require('../packager/react-packager/src/Resolver/polyfills/babelHelpers.js');
-global.__DEV__ = true;
-global.__fbBatchedBridgeConfig = {
-  remoteModuleConfig: [],
-  localModulesConfig: [],
-};
-
-global.Promise = require('promise');
-
-jest.setMock('ErrorUtils', require('ErrorUtils'));
+module.exports = require('fs');

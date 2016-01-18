@@ -17,15 +17,24 @@ const json5 = require('json5');
 const path = require('path');
 const ReactPackager = require('./react-packager');
 
-const babelRC =
-  json5.parse(
+
+const projectBabelRCPath = path.resolve(__dirname, '..', '..', '..', '.babelrc');
+
+let babelRC = { plugins: [] };
+
+// If a babelrc exists in the project,
+// don't use the one provided with react-native.
+if (!fs.existsSync(projectBabelRCPath)) {
+  babelRC = json5.parse(
     fs.readFileSync(
-      path.resolve(__dirname, 'react-packager', '.babelrc')));
+      path.resolve(__dirname, 'react-packager', '.babelrc.json')));
+}
 
-function transform(src, filename, options) {
-  options = options || {};
-
-  const extraPlugins = ['external-helpers-2'];
+/**
+ * Given a filename and options, build a Babel
+ * config object with the appropriate plugins.
+ */
+function buildBabelConfig(filename, options) {
   const extraConfig = {
     filename,
     sourceFileName: filename,
@@ -33,28 +42,22 @@ function transform(src, filename, options) {
 
   const config = Object.assign({}, babelRC, extraConfig);
 
+  // Add extra plugins
+  const extraPlugins = [require('babel-plugin-external-helpers')];
+
   if (options.inlineRequires) {
     extraPlugins.push(inlineRequires);
   }
   config.plugins = extraPlugins.concat(config.plugins);
 
-  // Manually resolve all default Babel plugins. babel.transform will attempt to resolve
-  // all base plugins relative to the file it's compiling. This makes sure that we're
-  // using the plugins installed in the react-native package.
-  config.plugins = config.plugins.map(function(plugin) {
-    // Normalise plugin to an array.
-    if (!Array.isArray(plugin)) {
-      plugin = [plugin];
-    }
-    // Only resolve the plugin if it's a string reference.
-    if (typeof plugin[0] === 'string') {
-      plugin[0] = require(`babel-plugin-${plugin[0]}`);
-      plugin[0] = plugin[0].__esModule ? plugin[0].default : plugin[0];
-    }
-    return plugin;
-  });
+  return Object.assign({}, babelRC, extraConfig);
+}
 
-  const result = babel.transform(src, Object.assign({}, babelRC, config));
+function transform(src, filename, options) {
+  options = options || {};
+
+  const babelConfig = buildBabelConfig(filename, options);
+  const result = babel.transform(src, babelConfig);
 
   return {
     code: result.code,
