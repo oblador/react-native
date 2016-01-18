@@ -56,10 +56,6 @@ const validateOpts = declareOpts({
     type:'string',
     required: false,
   },
-  enableInternalTransforms: {
-    type: 'boolean',
-    default: false,
-  },
   nonPersistent: {
     type: 'boolean',
     default: false,
@@ -135,7 +131,6 @@ class Bundler {
       blacklistRE: opts.blacklistRE,
       cache: this._cache,
       transformModulePath: opts.transformModulePath,
-      enableInternalTransforms: opts.enableInternalTransforms,
     });
 
     this._projectRoots = opts.projectRoots;
@@ -284,29 +279,37 @@ class Bundler {
     });
   }
 
-  bundleForHMR(modules) {
-    return Promise.all(
-      modules.map(module => {
-        return Promise.all([
-          module.getName(),
-          this._transformer.loadFileAndTransform(
-            module.path,
-            // TODO(martinb): pass non null main (t9527509)
-            this._getTransformOptions({main: null}, {hot: true}),
-          ),
-        ]).then(([moduleName, transformedSource]) => {
-          return (`
-            __accept(
-              '${moduleName}',
-              function(global, require, module, exports) {
-                ${transformedSource.code}
-              }
-            );
-          `);
-        });
+  bundleForHMR({entryFile, platform, modules}) {
+    return this.getDependencies(entryFile, /*isDev*/true, platform)
+      .then(response => {
+        return Promise.all(
+          modules.map(module => {
+            return Promise.all([
+              module.getName(),
+              this._transformer.loadFileAndTransform(
+                module.path,
+                // TODO(martinb): pass non null main (t9527509)
+                this._getTransformOptions({main: null}, {hot: true}),
+              ),
+            ]).then(([moduleName, transformed]) => {
+              return this._resolver.resolveRequires(response,
+                module,
+                transformed.code,
+              ).then(({name, code}) => {
+                return (`
+                  __accept(
+                    '${moduleName}',
+                    function(global, require, module, exports) {
+                      ${code}
+                    }
+                  );
+                `);
+              });
+            });
+          })
+        );
       })
-    )
-    .then(code => code.join('\n'));
+      .then(modules => modules.join('\n'));
   }
 
   invalidateFile(filePath) {
@@ -315,6 +318,10 @@ class Bundler {
 
   getShallowDependencies(entryFile) {
     return this._resolver.getShallowDependencies(entryFile);
+  }
+
+  stat(filePath) {
+    return this._resolver.stat(filePath);
   }
 
   getModuleForPath(entryFile) {

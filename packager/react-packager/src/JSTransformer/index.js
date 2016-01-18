@@ -24,10 +24,10 @@ const readFile = Promise.denodeify(fs.readFile);
 const MAX_CALLS_PER_WORKER = 600;
 
 // Worker will timeout if one of the callers timeout.
-const DEFAULT_MAX_CALL_TIME = 120000;
+const DEFAULT_MAX_CALL_TIME = 300000;
 
 // How may times can we tolerate failures from the worker.
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
 
 const validateOpts = declareOpts({
   projectRoots: {
@@ -53,10 +53,6 @@ const validateOpts = declareOpts({
     type: 'number',
     default: DEFAULT_MAX_CALL_TIME,
   },
-  enableInternalTransforms: {
-    type: 'boolean',
-    default: false,
-  },
 });
 
 class Transformer {
@@ -65,7 +61,6 @@ class Transformer {
 
     this._cache = opts.cache;
     this._transformModulePath = opts.transformModulePath;
-    this._enableInternalTransforms = opts.enableInternalTransforms;
 
     if (opts.transformModulePath != null) {
       this._workers = workerFarm({
@@ -111,7 +106,6 @@ class Transformer {
             options: {
               ...options,
               externalTransformModulePath: this._transformModulePath,
-              enableInternalTransforms: this._enableInternalTransforms,
             },
           }).then(res => {
             if (res.error) {

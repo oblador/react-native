@@ -30,6 +30,13 @@
   XCTAssertEqualObjects(bar, @"foo");
 }
 
+- (void)testGetEncodedParam
+{
+  NSURL *URL = [NSURL URLWithString:@"http://example.com?foo=You%20%26%20Me"];
+  NSString *foo = RCTGetURLQueryParam(URL, @"foo");
+  XCTAssertEqualObjects(foo, @"You & Me");
+}
+
 - (void)testQueryParamNotFound
 {
   NSURL *URL = [NSURL URLWithString:@"http://example.com?foo=bar"];
@@ -58,11 +65,25 @@
   XCTAssertEqualObjects(result.absoluteString, @"http://example.com?foo=foo&bar=foo");
 }
 
+- (void)testReplaceEncodedParam
+{
+  NSURL *URL = [NSURL URLWithString:@"http://example.com?foo=You%20%26%20Me"];
+  NSURL *result = RCTURLByReplacingQueryParam(URL, @"foo", @"Me & You");
+  XCTAssertEqualObjects(result.absoluteString, @"http://example.com?foo=Me%20%26%20You");
+}
+
 - (void)testAppendParam
 {
   NSURL *URL = [NSURL URLWithString:@"http://example.com?bar=foo"];
   NSURL *result = RCTURLByReplacingQueryParam(URL, @"foo", @"bar");
   XCTAssertEqualObjects(result.absoluteString, @"http://example.com?bar=foo&foo=bar");
+}
+
+- (void)testRemoveParam
+{
+  NSURL *URL = [NSURL URLWithString:@"http://example.com?bar=foo&foo=bar"];
+  NSURL *result = RCTURLByReplacingQueryParam(URL, @"bar", nil);
+  XCTAssertEqualObjects(result.absoluteString, @"http://example.com?foo=bar");
 }
 
 - (void)testNilURLAppendQueryParam

@@ -531,9 +531,7 @@ RCT_EXPORT_METHOD(reload)
 
 - (BOOL)hotLoadingAvailable
 {
-  return !_bridge.bundleURL.fileURL // Only works when running from server
-  && [_bridge.delegate respondsToSelector:@selector(bridgeSupportsHotLoading:)]
-  && [_bridge.delegate bridgeSupportsHotLoading:_bridge];
+  return false;
 }
 
 - (void)setHotLoadingEnabled:(BOOL)enabled
@@ -544,7 +542,7 @@ RCT_EXPORT_METHOD(reload)
   BOOL actuallyEnabled = [self hotLoadingAvailable] && _hotLoadingEnabled;
   if (RCTGetURLQueryParam(_bridge.bundleURL, @"hot").boolValue != actuallyEnabled) {
     _bridge.bundleURL = RCTURLByReplacingQueryParam(_bridge.bundleURL, @"hot",
-                                                    actuallyEnabled ? @"true" : @"false");
+                                                    actuallyEnabled ? @"true" : nil);
     [_bridge reload];
   }
 }

@@ -26,7 +26,8 @@
     ],
     "unmockedModulePathPatterns": [
       "promise",
-      "source-map"
+      "source-map",
+      "fbjs"
     ]
   },
   "main": "Libraries/react-native/react-native.js",
@@ -105,10 +106,11 @@
     "opn": "^3.0.2",
     "optimist": "^0.6.1",
     "progress": "^1.1.8",
-    "promise": "^7.0.4",
+    "promise": "^7.1.1",
     "react": "^0.14.5",
     "react-timer-mixin": "^0.13.2",
     "react-transform-hmr": "^1.0.1",
+    "babel-plugin-react-transform": "2.0.0-beta1",
     "rebound": "^0.0.13",
     "regenerator": "^0.8.36",
     "sane": "^1.2.0",
@@ -130,7 +132,6 @@
     "eslint": "1.3.1",
     "eslint-plugin-react": "3.3.1",
     "portfinder": "0.4.0",
-    "temp": "0.8.3",
-    "babel-plugin-react-transform": "2.0.0-beta1"
+    "temp": "0.8.3"
   }
 }

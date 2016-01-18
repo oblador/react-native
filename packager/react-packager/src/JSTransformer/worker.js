@@ -15,6 +15,14 @@ var Transforms = require('../transforms');
 // transforms should be run after the external ones to ensure that they run on
 // Javascript code
 function internalTransforms(sourceCode, filename, options) {
+  var plugins = Transforms.getAll(options);
+  if (plugins.length === 0) {
+    return {
+      code: sourceCode,
+      filename: filename,
+    };
+  }
+
   var result = babel.transform(sourceCode, {
     retainLines: true,
     compact: true,
@@ -22,7 +30,7 @@ function internalTransforms(sourceCode, filename, options) {
     filename: filename,
     sourceFileName: filename,
     sourceMaps: false,
-    plugins: Transforms.getAll()
+    plugins: plugins,
   });
 
   return {
@@ -32,16 +40,16 @@ function internalTransforms(sourceCode, filename, options) {
 }
 
 function onExternalTransformDone(data, callback, error, externalOutput) {
-  var result;
-  if (data.options.enableInternalTransforms) {
-    result = internalTransforms(
-      externalOutput.code,
-      externalOutput.filename,
-      data.options
-    );
-  } else {
-    result = externalOutput;
+  if (error) {
+    callback(error);
+    return;
   }
+
+  var result = internalTransforms(
+    externalOutput.code,
+    externalOutput.filename,
+    data.options
+  );
 
   callback(null, result);
 }

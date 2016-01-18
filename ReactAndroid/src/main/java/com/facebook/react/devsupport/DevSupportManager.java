@@ -263,6 +263,17 @@ public class DevSupportManager implements NativeModuleCallExceptionHandler {
           }
         });
     options.put(
+            mDevSettings.isHotModuleReplacementEnabled()
+                    ? mApplicationContext.getString(R.string.catalyst_hot_module_replacement_off)
+                    : mApplicationContext.getString(R.string.catalyst_hot_module_replacement),
+            new DevOptionHandler() {
+              @Override
+              public void onOptionSelected() {
+                mDevSettings.setHotModuleReplacementEnabled(!mDevSettings.isHotModuleReplacementEnabled());
+                handleReloadJS();
+              }
+            });
+    options.put(
         mDevSettings.isReloadOnJSChangeEnabled()
             ? mApplicationContext.getString(R.string.catalyst_live_reload_off)
             : mApplicationContext.getString(R.string.catalyst_live_reload),
@@ -618,6 +629,13 @@ public class DevSupportManager implements NativeModuleCallExceptionHandler {
         },
         Assertions.assertNotNull(mJSAppBundleName),
         mJSBundleTempFile);
+    progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+      @Override
+      public void onCancel(DialogInterface dialog) {
+        mDevServerHelper.cancelDownloadBundleFromURL();
+      }
+    });
+    progressDialog.setCancelable(true);
   }
 
   private void reload() {
