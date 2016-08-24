@@ -381,6 +381,7 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init)
   uint16_t _coalescingKey;
   NSString *_lastEmittedEventName;
   NSHashTable *_scrollListeners;
+  CGFloat _lastTranslationAlongAxis;
 }
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
@@ -687,6 +688,11 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
     // Which direction is the scroll travelling?
     CGPoint translation = [scrollView.panGestureRecognizer translationInView:scrollView];
     CGFloat translationAlongAxis = isHorizontal ? translation.x : translation.y;
+    if (translationAlongAxis == 0 && _lastTranslationAlongAxis) {
+      translationAlongAxis = _lastTranslationAlongAxis;
+    } else {
+      _lastTranslationAlongAxis = translationAlongAxis;
+    }
 
     // Offset based on desired alignment
     CGFloat frameLength = isHorizontal ? self.frame.size.width : self.frame.size.height;
@@ -698,7 +704,7 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
     }
 
     // Pick snap point based on direction and proximity
-    NSInteger snapIndex = floor((targetContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
+    NSInteger snapIndex = round((targetContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
     snapIndex = (translationAlongAxis < 0) ? snapIndex + 1 : snapIndex;
     CGFloat newTargetContentOffset = ( snapIndex * snapToIntervalF ) - alignmentOffset;
 
