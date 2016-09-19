@@ -705,7 +705,6 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
 
     // Pick snap point based on direction and proximity
     NSInteger snapIndex = round((targetContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
-    snapIndex = (translationAlongAxis < 0) ? snapIndex + 1 : snapIndex;
     CGFloat newTargetContentOffset = ( snapIndex * snapToIntervalF ) - alignmentOffset;
 
     // Set new targetContentOffset
