@@ -612,7 +612,7 @@ var ListView = React.createClass({
           totalIndex++;
         }
         if (!frame) {
-          break;
+          continue;
         }
         var rowVisible = visibleSection[rowID];
         var min = isVertical ? frame.y : frame.x;
