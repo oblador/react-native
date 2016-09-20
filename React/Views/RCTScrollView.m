@@ -382,6 +382,7 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init)
   NSString *_lastEmittedEventName;
   NSHashTable *_scrollListeners;
   CGFloat _lastTranslationAlongAxis;
+  CGPoint _scrollBeganAtOffset;
 }
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
@@ -665,6 +666,7 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
 {
   _allowNextScrollNoMatterWhat = YES; // Ensure next scroll event is recorded, regardless of throttle
+  _scrollBeganAtOffset = scrollView.contentOffset;
   RCT_SEND_SCROLL_EVENT(onScrollBeginDrag, nil);
   RCT_FORWARD_SCROLL_EVENT(scrollViewWillBeginDragging:scrollView);
 }
@@ -683,6 +685,7 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
     BOOL isHorizontal = (scrollView.contentSize.width > self.frame.size.width);
 
     // What is the current offset?
+    CGFloat currentContentOffsetAlongAxis = isHorizontal ? _scrollBeganAtOffset.x : _scrollBeganAtOffset.y;
     CGFloat targetContentOffsetAlongAxis = isHorizontal ? targetContentOffset->x : targetContentOffset->y;
 
     // Which direction is the scroll travelling?
@@ -705,6 +708,9 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
 
     // Pick snap point based on direction and proximity
     NSInteger snapIndex = round((targetContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
+    NSInteger currentIndex = round((currentContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
+    // Limit snap index to adjacent indices
+    snapIndex = MAX(currentIndex - 1, MIN(currentIndex + 1, snapIndex));
     CGFloat newTargetContentOffset = ( snapIndex * snapToIntervalF ) - alignmentOffset;
 
     // Set new targetContentOffset
