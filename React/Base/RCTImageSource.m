@@ -67,9 +67,12 @@
   CGFloat scale = 1.0;
   BOOL packagerAsset = NO;
   if ([json isKindOfClass:[NSDictionary class]]) {
-    if (!(request = [self NSURLRequest:json])) {
+    NSMutableURLRequest *mutableRequest = [[self NSURLRequest:json] mutableCopy];
+    if (!mutableRequest) {
       return nil;
     }
+    mutableRequest.cachePolicy = NSURLRequestReturnCacheDataElseLoad;
+    request = [mutableRequest copy];
     size = [self CGSize:json];
     scale = [self CGFloat:json[@"scale"]] ?: [self BOOL:json[@"deprecated"]] ? 0.0 : 1.0;
     packagerAsset = [self BOOL:json[@"__packager_asset"]];
