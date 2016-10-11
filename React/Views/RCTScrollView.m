@@ -389,10 +389,8 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init)
   uint16_t _coalescingKey;
   NSString *_lastEmittedEventName;
   NSHashTable *_scrollListeners;
-  // The last non-zero value of translationAlongAxis from scrollViewWillEndDragging.
-  // Tells if user was scrolling forward or backward and is used to determine a correct
-  // snap index when the user stops scrolling with a tap on the scroll view.
-  CGFloat _lastNonZeroTranslationAlongAxis;
+  CGFloat _lastTranslationAlongAxis;
+  CGPoint _scrollBeganAtOffset;
 }
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
@@ -684,6 +682,7 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
 {
   _allowNextScrollNoMatterWhat = YES; // Ensure next scroll event is recorded, regardless of throttle
+  _scrollBeganAtOffset = scrollView.contentOffset;
   RCT_SEND_SCROLL_EVENT(onScrollBeginDrag, nil);
   RCT_FORWARD_SCROLL_EVENT(scrollViewWillBeginDragging:scrollView);
 }
@@ -702,11 +701,17 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
     BOOL isHorizontal = (scrollView.contentSize.width > self.frame.size.width);
 
     // What is the current offset?
+    CGFloat currentContentOffsetAlongAxis = isHorizontal ? _scrollBeganAtOffset.x : _scrollBeganAtOffset.y;
     CGFloat targetContentOffsetAlongAxis = isHorizontal ? targetContentOffset->x : targetContentOffset->y;
 
     // Which direction is the scroll travelling?
     CGPoint translation = [scrollView.panGestureRecognizer translationInView:scrollView];
     CGFloat translationAlongAxis = isHorizontal ? translation.x : translation.y;
+    if (translationAlongAxis == 0 && _lastTranslationAlongAxis) {
+      translationAlongAxis = _lastTranslationAlongAxis;
+    } else {
+      _lastTranslationAlongAxis = translationAlongAxis;
+    }
 
     // Offset based on desired alignment
     CGFloat frameLength = isHorizontal ? self.frame.size.width : self.frame.size.height;
@@ -718,15 +723,10 @@ RCT_SCROLL_EVENT_HANDLER(scrollViewDidZoom, onScroll)
     }
 
     // Pick snap point based on direction and proximity
-    NSInteger snapIndex = floor((targetContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
-    BOOL isScrollingForward = translationAlongAxis < 0;
-    BOOL wasScrollingForward = translationAlongAxis == 0 && _lastNonZeroTranslationAlongAxis < 0;
-    if (isScrollingForward || wasScrollingForward) {
-      snapIndex = snapIndex + 1;
-    }
-    if (translationAlongAxis != 0) {
-      _lastNonZeroTranslationAlongAxis = translationAlongAxis;
-    }
+    NSInteger snapIndex = round((targetContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
+    NSInteger currentIndex = round((currentContentOffsetAlongAxis + alignmentOffset) / snapToIntervalF);
+    // Limit snap index to adjacent indices
+    snapIndex = MAX(currentIndex - 1, MIN(currentIndex + 1, snapIndex));
     CGFloat newTargetContentOffset = ( snapIndex * snapToIntervalF ) - alignmentOffset;
 
     // Set new targetContentOffset
