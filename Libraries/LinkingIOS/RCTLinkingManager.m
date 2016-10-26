@@ -9,6 +9,7 @@
 
 #import "RCTLinkingManager.h"
 
+@import CoreSpotlight;
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
@@ -107,9 +108,13 @@ RCT_EXPORT_METHOD(getInitialURL:(RCTPromiseResolveBlock)resolve
     initialURL = self.bridge.launchOptions[UIApplicationLaunchOptionsURLKey];
   } else {
     NSDictionary *userActivityDictionary =
-      self.bridge.launchOptions[UIApplicationLaunchOptionsUserActivityDictionaryKey];
-    if ([userActivityDictionary[UIApplicationLaunchOptionsUserActivityTypeKey] isEqual:NSUserActivityTypeBrowsingWeb]) {
-      initialURL = ((NSUserActivity *)userActivityDictionary[@"UIApplicationLaunchOptionsUserActivityKey"]).webpageURL;
+    self.bridge.launchOptions[UIApplicationLaunchOptionsUserActivityDictionaryKey];
+    NSUserActivity *userActivity = userActivityDictionary[@"UIApplicationLaunchOptionsUserActivityKey"];
+    if ([userActivity isEqual:NSUserActivityTypeBrowsingWeb]) {
+      initialURL = userActivity.webpageURL;
+    } else if ([userActivity.activityType isEqualToString:CSSearchableItemActionType]) {
+      NSString *identifier = [userActivity.userInfo objectForKey:CSSearchableItemActivityIdentifier];
+      initialURL = [NSURL URLWithString:identifier];
     }
   }
   resolve(RCTNullIfNil(initialURL.absoluteString));
