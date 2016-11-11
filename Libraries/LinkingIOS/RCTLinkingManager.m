@@ -110,7 +110,7 @@ RCT_EXPORT_METHOD(getInitialURL:(RCTPromiseResolveBlock)resolve
     NSDictionary *userActivityDictionary =
     self.bridge.launchOptions[UIApplicationLaunchOptionsUserActivityDictionaryKey];
     NSUserActivity *userActivity = userActivityDictionary[@"UIApplicationLaunchOptionsUserActivityKey"];
-    if ([userActivity isEqual:NSUserActivityTypeBrowsingWeb]) {
+    if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
       initialURL = userActivity.webpageURL;
     } else if ([userActivity.activityType isEqualToString:CSSearchableItemActionType]) {
       NSString *identifier = [userActivity.userInfo objectForKey:CSSearchableItemActivityIdentifier];
